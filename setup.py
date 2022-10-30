@@ -1,15 +1,18 @@
 from setuptools import setup, find_packages
+from os import path
+
+dir = path.abspath(path.dirname(__file__))
 
 setup(
     # Basic info
     name='grafgate',
-    version=open('VERSION').read().strip(),
+    version=open(path.join(dir, 'VERSION'), encoding='utf-8').read().strip(),
     author='Akop Kesheshyan',
     author_email='hello@akop.dev',
     url='https://github.com/akopkesheshyan/grafgate',
     license='MIT',
     description='Toolkit for building Grafana data source backend',
-    long_description=open('README.md').read(),
+    long_description=open(path.join(dir, 'README.md'), encoding='utf-8').read(),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
