@@ -28,20 +28,12 @@ update: compile install
 activate:
 	@python3 -m venv .venv
 	@. .venv/bin/activate 
-	$(PYTHON) pip install pip-tools
-
-# -------------------------------------------------------------------------------------------------
-# Update package dependencies
-# -------------------------------------------------------------------------------------------------
-compile:
-	$(PYTHON) piptools compile --upgrade requirements.in 
-	$(PYTHON) piptools compile --upgrade requirements-dev.in
 	
 # -------------------------------------------------------------------------------------------------
 # Install packages to current environment
 # -------------------------------------------------------------------------------------------------
 install:
-	$(PYTHON) piptools sync requirements.txt requirements-dev.txt
+	$(PYTHON) pip install -e .[dev]
 
 # -------------------------------------------------------------------------------------------------
 # test: @ Run tests using pytest
@@ -52,7 +44,13 @@ test:
 # -------------------------------------------------------------------------------------------------
 # lint: @ Checks the source code against coding standard rules and safety
 # -------------------------------------------------------------------------------------------------
-lint: lint.flake8 lint.safety lint.docs
+lint: lint.setup lint.flake8 lint.safety lint.docs
+
+# -------------------------------------------------------------------------------------------------
+# setup.py 
+# -------------------------------------------------------------------------------------------------
+lint.setup: 
+	$(PYTHON) setup check -s
 
 # -------------------------------------------------------------------------------------------------
 # flake8 
@@ -66,7 +64,7 @@ lint.flake8:
 # safety 
 # -------------------------------------------------------------------------------------------------
 lint.safety: 
-	$(PYTHON) safety check --full-report -r requirements.txt
+	$(PYTHON) safety check --full-report
 
 # -------------------------------------------------------------------------------------------------
 # pydocstyle
