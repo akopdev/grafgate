@@ -38,25 +38,23 @@ class GrafGate:
         self.tasks.append((func.__name__, custom_func,))
 
     def _heath(self):
-        """Used for "Test connection" on the datasource config page"""
+        """Check for connection on the datasource config page."""
         async def endpoint(req):
             return web.json_response("OK")
         return web.get("/", endpoint)
 
     def _search(self):
         """
-        List available metrics
+        List available metrics.
 
-        Used by the find metric options on the query tab in panels
+        Used by the find metric options on the query tab in panels.
         """
         async def endpoint(req):
             return web.json_response(list(self.metrics.keys()))
         return web.post("/search", endpoint)
 
     def _query(self):
-        """
-        Returns metrics data
-        """
+        """Return metrics data."""
         async def endpoint(req):
             body = await req.json()
             payload = Payload(**body)
@@ -95,13 +93,13 @@ class GrafGate:
         return web.post("/query", endpoint)
 
     def _tag_keys(self):
-        """Keys for ad hoc filters"""
+        """Keys for ad hoc filters."""
         async def endpoint(req):
             raise Exception("Not implemented")
         return web.post("/tag-keys", endpoint)
 
     def _tag_values(self):
-        """Values for ad hoc filters"""
+        """Values for ad hoc filters."""
         async def endpoint(req):
             raise Exception("Not implemented")
         return web.post("/tag-values", endpoint)
