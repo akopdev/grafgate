@@ -13,6 +13,7 @@ setup(
     license="MIT",
     description="Toolkit for building Grafana data source backend",
     long_description=open(path.join(dir, "README.md"), encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
