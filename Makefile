@@ -56,7 +56,7 @@ lint.setup:
 # flake8 
 # -------------------------------------------------------------------------------------------------
 lint.flake8: 
-	$(PYTHON) flake8 --exclude=.venv,.eggs,*.egg,.git,migrations \
+	$(PYTHON) flake8 --exclude=.venv,.eggs,*.egg,.git,migrations,__init__.py \
 									 --filename=*.py,*.pyx \
 									 --max-line-length=100 .
 

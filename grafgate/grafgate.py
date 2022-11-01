@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, Callable, Dict, List,  Tuple
 
 from aiohttp import web
+from functools import wraps
 
 from .schemas import Column, Payload, Table, Timeseries
 
@@ -23,19 +24,21 @@ class GrafGate:
             for name, val in kwargs.items():
                 self.app[name] = val
 
-    def metric(self, func: Callable = None) -> Callable:
-        def decorator(func) -> None:
-            self.metrics[func.__name__] = func
-        return decorator
+    def metric(self, func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs) -> None:
+            return await func(*args, **kwargs)
+        self.metrics[func.__name__] = func
+        return wrapper
 
     def task(self, func: Callable) -> None:
-        async def custom_func(*args, **kwargs) -> Any:
+        async def wrapper(*args, **kwargs) -> Any:
             if func.__code__.co_argcount:
                 data = await func(*args, **kwargs)
             else:
                 data = await func()
             return data
-        self.tasks.append((func.__name__, custom_func,))
+        self.tasks.append((func.__name__, wrapper,))
 
     def _heath(self):
         """Check for connection on the datasource config page."""
@@ -112,13 +115,16 @@ class GrafGate:
                 if response.status != 404:
                     return response
                 message = response.message
+                status = response.status
             except web.HTTPException as ex:
                 if ex.status != 404:
                     raise
                 message = ex.reason
+                status = ex.status
             except Exception as e:
                 message = str(e)
-            return web.json_response({'error': message})
+                status = 500
+            return web.json_response({'error': message}, status=status)
         return error_middleware
 
     async def _tasks(self, app):
