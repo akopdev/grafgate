@@ -24,8 +24,8 @@ def app():
         return [(app_param, 1667293172), (param1, 1667293173)]
 
     @gg.metric
-    def ts_metric_5(param1: int):
-        return [(param1, 1667293172)]
+    def ts_metric_5(param1: int, param2):
+        return [(param1, 1667293172), (param2, 1667293173)]
 
     @gg.metric
     async def t_metric_1(column_name: str):

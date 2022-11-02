@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 from pydantic import BaseModel, Field
 
 
@@ -32,3 +32,8 @@ class Range(BaseModel):
 class Payload(BaseModel):
     targets: List[Target]
     range: Range
+
+class Metric(BaseModel):
+    coroutine: bool
+    vars: Optional[Dict[str, Any]] = {}
+    func: Callable

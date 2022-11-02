@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List,  Tuple
 from aiohttp import web
 from functools import wraps
 
-from .schemas import Column, Payload, Table, Timeseries
+from .schemas import Column, Payload, Table, Timeseries, Metric
 
 
 class GrafGate:
@@ -26,9 +26,23 @@ class GrafGate:
 
     def metric(self, func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
-            return await func(*args, **kwargs)
-        self.metrics[func.__name__] = func
+        async def wrapper(inputs: Dict[str, Any]) -> None:
+            if func.__code__.co_argcount:
+                varnames = {}
+                for varname in func.__code__.co_varnames:
+                    vartype = func.__annotations__.get(varname, str)
+                    if varname in inputs:
+                        varnames.setdefault(
+                            varname,
+                            vartype(inputs.get(varname))
+                        )
+                if asyncio.iscoroutinefunction(func):
+                    return await func(**varnames)
+                return func(**varnames)
+            if asyncio.iscoroutinefunction(func):
+                return await func()
+            return func()
+        self.metrics[func.__name__] = wrapper
         return wrapper
 
     def task(self, func: Callable) -> None:
@@ -64,20 +78,8 @@ class GrafGate:
             response = []
             for target in payload.targets:
                 if target.target in self.metrics:
-                    func = self.metrics[target.target]
-                    if func.__code__.co_argcount:
-                        # Prepare inputs for the method
-                        available_inputs = {**req.app, **target.payload, **payload.range.dict()}
-                        varnames = {}
-                        for varname in func.__code__.co_varnames:
-                            if varname in available_inputs:
-                                varnames.setdefault(
-                                    varname,
-                                    available_inputs.get(varname)
-                                )
-                        data = await func(**varnames)
-                    else:
-                        data = await func()
+                    inputs = {**req.app, **target.payload, **payload.range.dict()}
+                    data = await self.metrics[target.target](inputs)
                     if data:
                         if not isinstance(data[0], (list, tuple, dict,)):
                             raise ValueError("Not supported type of data")

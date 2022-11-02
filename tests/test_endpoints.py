@@ -112,7 +112,6 @@ async def test_server_and_payload_params(client):
     assert data[0]["datapoints"] == [[400, 1667293172], [500, 1667293173]]
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_synchronous_metric(client):
     payload = {
@@ -120,7 +119,8 @@ async def test_synchronous_metric(client):
             {
                 "target": "ts_metric_5",
                 "payload": {
-                    "param1": 600
+                    "param1": 600,
+                    "param2": 700  # will be converted to string
                 }
             }
         ],
@@ -136,7 +136,7 @@ async def test_synchronous_metric(client):
     data = await r.json()
     assert len(data) == 1
     assert data[0]["target"] == "ts_metric_5"
-    assert data[0]["datapoints"] == [[600, 1667293172]]
+    assert data[0]["datapoints"] == [[600, 1667293172], ["700", 1667293173]]
 
 
 @pytest.mark.asyncio
