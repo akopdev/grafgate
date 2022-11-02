@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List,  Tuple
 from aiohttp import web
 from functools import wraps
 
-from .schemas import Column, Payload, Table, Timeseries, Metric
+from .schemas import Column, Payload, Table, Timeseries
 
 
 class GrafGate:
