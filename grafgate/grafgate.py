@@ -1,8 +1,8 @@
 import asyncio
-from typing import Any, Callable, Dict, List,  Tuple
+from typing import Any, Callable, Dict, List, Optional,  Tuple
 
 from aiohttp import web
-from functools import wraps
+from functools import wraps, partial
 
 from .schemas import Column, Payload, Table, Timeseries
 
@@ -24,7 +24,10 @@ class GrafGate:
             for name, val in kwargs.items():
                 self.app[name] = val
 
-    def metric(self, func: Callable) -> Callable:
+    def metric(self, func: Optional[Callable] = None, *, name: Optional[str] = None) -> Callable:
+        if func is None:
+            return partial(self.metric, name=name)
+
         @wraps(func)
         async def wrapper(inputs: Dict[str, Any]) -> None:
             if func.__code__.co_argcount:
@@ -42,7 +45,8 @@ class GrafGate:
             if asyncio.iscoroutinefunction(func):
                 return await func()
             return func()
-        self.metrics[func.__name__] = wrapper
+        label = name or func.__name__
+        self.metrics[label] = wrapper
         return wrapper
 
     def task(self, func: Callable) -> None:

@@ -113,33 +113,6 @@ async def test_server_and_payload_params(client):
 
 
 @pytest.mark.asyncio
-async def test_synchronous_metric(client):
-    payload = {
-        "targets": [
-            {
-                "target": "ts_metric_5",
-                "payload": {
-                    "param1": 600,
-                    "param2": 700  # will be converted to string
-                }
-            }
-        ],
-        "range": {
-            "from": "2022-10-01T10:10:41.040939",
-            "to": "2022-11-01T10:10:41.040939"
-        }
-
-    }
-    r = await client.post("/query", json=payload)
-    assert r.status == 200
-
-    data = await r.json()
-    assert len(data) == 1
-    assert data[0]["target"] == "ts_metric_5"
-    assert data[0]["datapoints"] == [[600, 1667293172], ["700", 1667293173]]
-
-
-@pytest.mark.asyncio
 async def test_table_metric(client):
     payload = {
         "targets": [

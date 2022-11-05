@@ -42,5 +42,21 @@ def event_loop():
 
 
 @pytest.fixture()
+def payload():
+    return {
+        "targets": [
+            {
+                "target": "",
+                "payload": {}
+            }
+        ],
+        "range": {
+            "from": "2022-10-01T10:10:41.040939",
+            "to": "2022-11-01T10:10:41.040939"
+        }
+    }
+
+
+@pytest.fixture()
 def client(event_loop, aiohttp_client, app):
     return event_loop.run_until_complete(aiohttp_client(app.app))
