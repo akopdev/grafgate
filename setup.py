@@ -6,7 +6,7 @@ dir = path.abspath(path.dirname(__file__))
 setup(
     # Basic info
     name="grafgate",
-    version="0.0.1",
+    version="0.1.1",
     author="Akop Kesheshyan",
     author_email="hello@akop.dev",
     url="https://github.com/akopkesheshyan/grafgate",
@@ -36,6 +36,7 @@ setup(
             "pytest",
             "pytest-cov",
             "pytest-asyncio",
+            "pytest-aiohttp"
         ],
     },
     zip_safe=False,

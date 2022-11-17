@@ -1,7 +1,8 @@
 import asyncio
-from typing import Any, Callable, Dict, List,  Tuple
+from typing import Any, Callable, Dict, List, Optional,  Tuple
 
 from aiohttp import web
+from functools import wraps, partial
 
 from .schemas import Column, Payload, Table, Timeseries
 
@@ -23,19 +24,39 @@ class GrafGate:
             for name, val in kwargs.items():
                 self.app[name] = val
 
-    def metric(self, func: Callable = None) -> Callable:
-        def decorator(func) -> None:
-            self.metrics[func.__name__] = func
-        return decorator
+    def metric(self, func: Optional[Callable] = None, *, name: Optional[str] = None) -> Callable:
+        if func is None:
+            return partial(self.metric, name=name)
+
+        @wraps(func)
+        async def wrapper(inputs: Dict[str, Any]) -> None:
+            if func.__code__.co_argcount:
+                varnames = {}
+                for varname in func.__code__.co_varnames:
+                    vartype = func.__annotations__.get(varname, str)
+                    if varname in inputs:
+                        varnames.setdefault(
+                            varname,
+                            vartype(inputs.get(varname))
+                        )
+                if asyncio.iscoroutinefunction(func):
+                    return await func(**varnames)
+                return func(**varnames)
+            if asyncio.iscoroutinefunction(func):
+                return await func()
+            return func()
+        label = name or func.__name__
+        self.metrics[label] = wrapper
+        return wrapper
 
     def task(self, func: Callable) -> None:
-        async def custom_func(*args, **kwargs) -> Any:
+        async def wrapper(*args, **kwargs) -> Any:
             if func.__code__.co_argcount:
                 data = await func(*args, **kwargs)
             else:
                 data = await func()
             return data
-        self.tasks.append((func.__name__, custom_func,))
+        self.tasks.append((func.__name__, wrapper,))
 
     def _heath(self):
         """Check for connection on the datasource config page."""
@@ -61,20 +82,8 @@ class GrafGate:
             response = []
             for target in payload.targets:
                 if target.target in self.metrics:
-                    func = self.metrics[target.target]
-                    if func.__code__.co_argcount:
-                        # Prepare inputs for the method
-                        available_inputs = {**req.app, **target.payload, **payload.range.dict()}
-                        varnames = {}
-                        for varname in func.__code__.co_varnames:
-                            if varname in available_inputs:
-                                varnames.setdefault(
-                                    varname,
-                                    available_inputs.get(varname)
-                                )
-                        data = await func(**varnames)
-                    else:
-                        data = await func()
+                    inputs = {**req.app, **target.payload, **payload.range.dict()}
+                    data = await self.metrics[target.target](inputs)
                     if data:
                         if not isinstance(data[0], (list, tuple, dict,)):
                             raise ValueError("Not supported type of data")
@@ -112,13 +121,16 @@ class GrafGate:
                 if response.status != 404:
                     return response
                 message = response.message
+                status = response.status
             except web.HTTPException as ex:
                 if ex.status != 404:
                     raise
                 message = ex.reason
+                status = ex.status
             except Exception as e:
                 message = str(e)
-            return web.json_response({'error': message})
+                status = 500
+            return web.json_response({'error': message}, status=status)
         return error_middleware
 
     async def _tasks(self, app):
